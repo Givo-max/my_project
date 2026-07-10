@@ -1,0 +1,10 @@
+{
+  "name": "Givo Food Scanner",
+  "short_name": "Givo",
+  "description": "Point, scan, and know exactly what's on your plate.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#F5FAF8",
+  "theme_color": "#1F9D6C",
+  "icons": []
+}
