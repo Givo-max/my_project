@@ -1,160 +1,254 @@
 "use client";
+
 import React, { useState, useEffect } from 'react';
+import { 
+  Camera, Sparkles, ShieldCheck, ArrowLeft, RefreshCw, 
+  Loader2, AlertTriangle, CheckCircle2, Check, X, 
+  ChevronRight, Flame, Apple, Activity, History 
+} from 'lucide-react';
 
-export default function GivoApp() {
-  const [scanHistory, setScanHistory] = useState([]);
-  const [currentResult, setCurrentResult] = useState(null);
-  const [loading, setLoading] = useState(false);
+const TIPS = [
+  "Tip: Ensure good lighting for more accurate scanning.",
+  "Tip: Scanning complex dishes? Try capturing individual ingredients.",
+  "Tip: Tracking macros helps maintain a balanced energy level.",
+  "Tip: Don't forget to track water intake alongside your meals!"
+];
 
-  // 1. Load History from Browser Local Storage when page opens
-  useEffect(() => {
-    const savedHistory = localStorage.getItem('givo_history');
-    if (savedHistory) {
-      setScanHistory(JSON.parse(savedHistory));
-    }
-  }, []);
+const SUITABILITY_META = [
+  { key: "weightLoss", label: "Weight Loss", icon: Activity },
+  { key: "muscleGain", label: "Muscle Gain", icon: Flame },
+  { key: "diabetic", label: "Diabetic Friendly", icon: ShieldCheck }
+];
 
-  // 2. Mock Function: AI Food Scan simulation and auto-saving to history
-  const handleFoodScan = () => {
-    setLoading(true);
-    setCurrentResult(null);
+const TAG_STYLES = {
+  Healthy: { bg: "bg-emerald-500/10", text: "text-emerald-500", border: "border-emerald-500/20" },
+  Moderate: { bg: "bg-amber-500/10", text: "text-amber-500", border: "border-amber-500/20" },
+  Avoid: { bg: "bg-rose-500/10", text: "text-rose-500", border: "border-rose-500/20" }
+};
 
-    // AI Processing ki tarah 1.5 seconds ka wait
-    setTimeout(() => {
-      const newMeal = {
-        id: Date.now(),
-        name: "Grilled Salmon Bowl",
-        date: new Date().toLocaleDateString(),
-        calories: 450,
-        protein: "35g",
-        carbs: "12g",
-        fat: "22g",
-        minerals: "Calcium: 40mg, Magnesium: 35mg",
-        description: "Grilled Salmon Bowl is an excellent source of lean protein and heart-healthy omega-3 fatty acids. Perfect for weight management and metabolic health."
-      };
-
-      setCurrentResult(newMeal);
-      setLoading(false);
-
-      // Save to History (Sirf top 10 items save honge browser mein)
-      const updatedHistory = [newMeal, ...scanHistory].slice(0, 10);
-      setScanHistory(updatedHistory);
-      localStorage.setItem('givo_history', JSON.stringify(updatedHistory));
-    }, 1500);
-  };
-
+// --- Helper Components from your original UI ---
+function GlassCard({ children, darkMode, className = "" }) {
   return (
-    <div style={{ fontFamily: 'sans-serif', backgroundColor: '#f9fbf9', color: '#1a1a1a', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
-      
-      {/* ─── HEADER SECTION ─── */}
-      <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '20px', maxWidth: '800px', margin: '0 auto', width: '100%' }}>
-        <h1 style={{ fontSize: '24px', fontWeight: 'bold', color: '#115e59', margin: 0 }}>Givo</h1>
-        <div style={{ display: 'flex', gap: '15px', alignItems: 'center' }}>
-          <button style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '16px' }}>🌙</button>
-        </div>
-      </header>
-
-      {/* ─── MAIN CONTENT AREA ─── */}
-      <main style={{ flex: 1, maxWidth: '600px', margin: '0 auto', width: '100%', padding: '0 20px' }}>
-        
-        {/* Hero Headline */}
-        <section style={{ textAlign: 'center', margin: '40px 0' }}>
-          <p style={{ color: '#0d9488', fontWeight: '500', fontSize: '14px', margin: '0 0 10px 0' }}>✨ AI-powered nutrition, from a single photo</p>
-          <h2 style={{ fontSize: '32px', fontWeight: '800', margin: '0 0 15px 0', lineHeight: '1.2' }}>Point, scan, and know exactly what’s on your plate.</h2>
-          <p style={{ color: '#666', lineHeight: '1.6', margin: 0 }}>Givo reads any meal from a photo and breaks it down into calories, macros, vitamins, allergy flags, and health guidance — instantly.</p>
-          
-          {/* Main Action Button */}
-          <button 
-            onClick={handleFoodScan} 
-            disabled={loading}
-            style={{ backgroundColor: '#0d9488', color: '#fff', border: 'none', padding: '15px 30px', borderRadius: '30px', fontSize: '18px', fontWeight: '600', marginTop: '25px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '10px', boxShadow: '0 4px 10px rgba(13, 148, 136, 0.2)' }}
-          >
-            {loading ? "Analyzing Food..." : "📷 Scan your food >"}
-          </button>
-          <p style={{ fontSize: '12px', color: '#999', marginTop: '10px', margin: '10px 0 0 0' }}>No account needed • Works on mobile</p>
-        </section>
-
-        {/* ─── ADSENSE PLACEHOLDER 1 (Top Banner) ─── */}
-        <div style={{ width: '100%', height: '90px', backgroundColor: '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#94a3b8', fontSize: '12px', borderRadius: '8px', margin: '20px 0', border: '1px dashed #cbd5e1' }}>
-          [ AdSense Advertisement - Top Banner ]
-        </div>
-
-        {/* ─── SCAN RESULT CARD ─── */}
-        {currentResult && (
-          <section style={{ backgroundColor: '#fff', padding: '25px', borderRadius: '16px', boxShadow: '0 4px 20px rgba(0,0,0,0.04)', margin: '30px 0', border: '1px solid #e2e8f0' }}>
-            <h3 style={{ fontSize: '22px', fontWeight: '700', color: '#0f766e', margin: '0 0 5px 0' }}>{currentResult.name}</h3>
-            <p style={{ fontSize: '12px', color: '#888', margin: '0 0 15px 0' }}>Scanned on: {currentResult.date}</p>
-            
-            {/* Nutrition Grid */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px', textAlign: 'center', marginBottom: '20px' }}>
-              <div style={{ background: '#f0fdf4', padding: '10px', borderRadius: '8px' }}><b style={{ fontSize: '18px', color: '#16a34a' }}>{currentResult.calories}</b><br/><span style={{ fontSize: '11px', color: '#666' }}>Calories</span></div>
-              <div style={{ background: '#f0fdfa', padding: '10px', borderRadius: '8px' }}><b style={{ fontSize: '18px', color: '#0d9488' }}>{currentResult.protein}</b><br/><span style={{ fontSize: '11px', color: '#666' }}>Protein</span></div>
-              <div style={{ background: '#fff7ed', padding: '10px', borderRadius: '8px' }}><b style={{ fontSize: '18px', color: '#ea580c' }}>{currentResult.carbs}</b><br/><span style={{ fontSize: '11px', color: '#666' }}>Carbs</span></div>
-              <div style={{ background: '#fef2f2', padding: '10px', borderRadius: '8px' }}><b style={{ fontSize: '18px', color: '#dc2626' }}>{currentResult.fat}</b><br/><span style={{ fontSize: '11px', color: '#666' }}>Fat</span></div>
-            </div>
-
-            <p style={{ fontSize: '13px', color: '#444', margin: '0 0 15px 0' }}><b>Minerals & Micronutrients:</b> {currentResult.minerals}</p>
-            
-            {/* Health Guidance Text for AdSense Bot Content Requirement */}
-            <div style={{ borderTop: '1px solid #f1f5f9', paddingTop: '15px' }}>
-              <h4 style={{ fontSize: '14px', fontWeight: '600', color: '#333', margin: '0 0 5px 0' }}>Health & Nutrition Guidance:</h4>
-              <p style={{ fontSize: '13px', color: '#555', lineHeight: '1.5', margin: 0 }}>{currentResult.description}</p>
-            </div>
-          </section>
-        )}
-
-        {/* ─── ADSENSE PLACEHOLDER 2 (Mid Inline Rectangle) ─── */}
-        <div style={{ width: '100%', height: '250px', backgroundColor: '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#94a3b8', fontSize: '12px', borderRadius: '8px', margin: '20px 0', border: '1px dashed #cbd5e1' }}>
-          [ AdSense Advertisement - Inline Rectangle ]
-        </div>
-
-        {/* ─── SAVED MEALS / HISTORY SECTION ─── */}
-        <section style={{ margin: '40px 0' }}>
-          <h3 style={{ fontSize: '18px', fontWeight: '700', marginBottom: '15px', color: '#333', margin: '0 0 15px 0' }}>📋 Your Recent Scans (Saved Locally)</h3>
-          {scanHistory.length === 0 ? (
-            <p style={{ fontSize: '14px', color: '#888', fontStyle: 'italic', margin: 0 }}>No recent meals scanned yet. Scanned items save here automatically.</p>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-              {scanHistory.map((item) => (
-                <div 
-                  key={item.id} 
-                  onClick={() => setCurrentResult(item)} 
-                  style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '15px', backgroundColor: '#fff', borderRadius: '12px', border: '1px solid #e2e8f0', cursor: 'pointer', transition: 'transform 0.2s' }}
-                >
-                  <div>
-                    <h4 style={{ fontSize: '15px', fontWeight: '600', margin: 0 }}>{item.name}</h4>
-                    <span style={{ fontSize: '11px', color: '#999' }}>{item.date}</span>
-                  </div>
-                  <div style={{ textAlign: 'right' }}>
-                    <span style={{ fontWeight: '700', color: '#0d9488', fontSize: '14px' }}>{item.calories} kcal</span>
-                    <p style={{ fontSize: '11px', color: '#666', margin: 0 }}>P: {item.protein} | C: {item.carbs} | F: {item.fat}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </section>
-
-      </main>
-
-      {/* ─── FOOTER SECTION (Crucial for AdSense) ─── */}
-      <footer style={{ borderTop: '1px solid #e2e8f0', backgroundColor: '#fff', padding: '30px 20px', marginTop: '60px' }}>
-        <div style={{ maxWidth: '800px', margin: '0 auto', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '15px' }}>
-          <p style={{ fontSize: '14px', color: '#666', margin: 0 }}>&copy; {new Date().getFullYear()} Givo AI Nutrition. All rights reserved.</p>
-          
-          {/* AdSense Mandatory Legal Links */}
-          <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap', justifyContent: 'center' }}>
-            <a href="/privacy-policy" style={{ fontSize: '13px', color: '#0d9488', textDecoration: 'none', fontWeight: '500' }}>Privacy Policy</a>
-            <a href="/terms" style={{ fontSize: '13px', color: '#0d9488', textDecoration: 'none', fontWeight: '500' }}>Terms of Service</a>
-            <a href="/about" style={{ fontSize: '13px', color: '#0d9488', textDecoration: 'none', fontWeight: '500' }}>About Us</a>
-            <a href="/contact" style={{ fontSize: '13px', color: '#0d9488', textDecoration: 'none', fontWeight: '500' }}>Contact Us</a>
-          </div>
-          <p style={{ fontSize: '11px', color: '#999', textAlign: 'center', maxWidth: '500px', margin: 0, lineHeight: '1.4' }}>
-            Disclaimer: Givo provides AI-generated nutritional estimations based on visual data. This tool does not replace professional medical or dietary advice.
-          </p>
-        </div>
-      </footer>
-
+    <div className={`backdrop-blur-xl rounded-3xl border transition-all p-6 ${
+      darkMode 
+        ? "bg-black/40 border-white/10 text-white shadow-2xl shadow-black/50" 
+        : "bg-white/70 border-black/5 text-slate-900 shadow-xl shadow-slate-100"
+    } ${className}`}>
+      {children}
     </div>
   );
 }
+
+function HealthRing({ score, darkMode, size = 92 }) {
+  const strokeWidth = 8;
+  const radius = (size - strokeWidth) / 2;
+  const circumference = radius * 2 * Math.PI;
+  const offset = circumference - (score / 100) * circumference;
+
+  return (
+    <div className="relative inline-flex items-center justify-center" style={{ width: size, height: size }}>
+      <svg className="transform -rotate-90" width={size} height={size}>
+        <circle cx={size/2} cy={size/2} r={radius} stroke={darkMode ? "#ffffff10" : "#00000005"} strokeWidth={strokeWidth} fill="transparent" />
+        <circle cx={size/2} cy={size/2} r={radius} stroke="#0d9488" strokeWidth={strokeWidth} fill="transparent" strokeDasharray={circumference} strokeDashoffset={offset} strokeLinecap="rounded" className="transition-all duration-1000" />
+      </svg>
+      <div className="absolute flex flex-col items-center">
+        <span className="text-xl font-bold tracking-tight">{score}</span>
+        <span className="text-[9px] uppercase tracking-wider opacity-60">Score</span>
+      </div>
+    </div>
+  );
+}
+
+function MacroBar({ label, value, unit, max, color, darkMode }) {
+  const pct = Math.min(100, (parseInt(value) / max) * 100);
+  return (
+    <div className="space-y-1">
+      <div className="flex justify-between text-xs font-medium">
+        <span className="opacity-70">{label}</span>
+        <span>{value}{unit}</span>
+      </div>
+      <div className={`h-2 rounded-full overflow-hidden ${darkMode ? "bg-white/10" : "bg-black/5"}`}>
+        <div className="h-full rounded-full transition-all duration-1000" style={{ width: `${pct}%`, backgroundColor: color }} />
+      </div>
+    </div>
+  );
+}
+
+function MicroStat({ label, value, darkMode }) {
+  return (
+    <div className={`p-3 rounded-2xl border text-center ${darkMode ? "bg-white/5 border-white/5" : "bg-slate-50 border-slate-100"}`}>
+      <span className="block text-[11px] font-medium opacity-60 uppercase tracking-wider">{label}</span>
+      <span className="text-sm font-semibold mt-0.5 block">{value || "0"}</span>
+    </div>
+  );
+}
+
+function CategoryBadge({ category }) {
+  const style = TAG_STYLES[category] || TAG_STYLES.Moderate;
+  return (
+    <span className={`px-2.5 py-1 text-xs font-semibold rounded-full border ${style.bg} ${style.text} ${style.border}`}>
+      {category}
+    </span>
+  );
+}
+
+function DietBadge({ label, ok }) {
+  const isOk = ok === "Yes" || ok === true;
+  return (
+    <span className={`px-2.5 py-1 text-xs font-semibold rounded-full border ${
+      isOk ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20" : "bg-slate-500/10 text-slate-400 border-slate-500/10"
+    }`}>
+      {label}: {isOk ? "Yes" : "No"}
+    </span>
+  );
+}
+
+// ─── MAIN CORE PAGE COMPONENT ───
+export default function Page() {
+  const [darkMode, setDarkMode] = useState(false);
+  const [view, setView] = useState("landing"); // landing, scan, result
+  const [tab, setTab] = useState("camera");
+  const [imageSrc, setImageSrc] = useState(null);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [tipIndex, setTipIndex] = useState(0);
+  const [error, setError] = useState(null);
+  const [result, setResult] = useState(null);
+  const [historyList, setHistoryList] = useState([]);
+
+  // Load cache on mount
+  useEffect(() => {
+    const saved = localStorage.getItem('givo_meal_history');
+    if (saved) setHistoryList(JSON.parse(saved));
+  }, []);
+
+  useEffect(() => {
+    let interval;
+    if (isAnalyzing) {
+      interval = setInterval(() => {
+        setTipIndex((prev) => (prev + 1) % TIPS.length);
+      }, 2000);
+    }
+    return () => clearInterval(interval);
+  }, [isAnalyzing]);
+
+  const runAnalysis = async () => {
+    setIsAnalyzing(true);
+    setError(null);
+    try {
+      // Custom Fetch endpoint simulation or actual call
+      const res = await fetch('/api/analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ image: imageSrc })
+      });
+      const data = await res.json();
+      
+      if (data.result) {
+        setResult(data.result);
+        
+        // Save dynamically to Local Storage History
+        const newHistoryItem = {
+          id: Date.now(),
+          name: data.result.name || "Scanned Dish",
+          date: new Date().toLocaleDateString(),
+          calories: data.result.calories || 0,
+          protein: data.result.protein || 0,
+          carbs: data.result.carbs || 0,
+          fat: data.result.fat || 0,
+          fullData: data.result,
+          savedImage: imageSrc
+        };
+        const updated = [newHistoryItem, ...historyList].slice(0, 6);
+        setHistoryList(updated);
+        localStorage.setItem('givo_meal_history', JSON.stringify(updated));
+
+        setView("result");
+      } else {
+        throw new Error("Analysis failed");
+      }
+    } catch (err) {
+      // Mock fallback data so your app works seamlessly during building phase
+      const mockResult = {
+        name: "Grilled Salmon Bowl",
+        serving: "1 serving (380g)",
+        category: "Healthy",
+        diet: { halal: "Yes", vegetarian: "No", vegan: "No" },
+        healthScore: 88,
+        calories: 420,
+        protein: 34,
+        carbs: 28,
+        fat: 18,
+        fiber: 6,
+        sugar: 4,
+        water: 65,
+        sodium: 240, potassium: 620, calcium: 45, iron: 2.1, magnesium: 38, cholesterol: 55,
+        vitaminA: "12%", vitaminC: "25%", vitaminD: "80%", vitaminB12: "90%",
+        ingredients: ["Salmon", "Quinoa", "Avocado", "Spinach", "Cherry Tomatoes"],
+        benefits: ["High in heart-healthy Omega-3 fatty acids.", "Excellent lean protein source for muscle maintenance."],
+        risks: ["Contains fish allergies.", "Moderate sodium composition depending on marination dressings."],
+        suitability: { weightLoss: "Excellent", muscleGain: "Excellent", diabetic: "Moderate" },
+        allergies: ["Fish"],
+        suggestions: ["Reduce soy-sauce dressing to lower sodium intake.", "Add lemon squeeze to increase Vitamin C bio-absorption."]
+      };
+      setResult(mockResult);
+      
+      const newHistoryItem = {
+        id: Date.now(),
+        name: mockResult.name,
+        date: new Date().toLocaleDateString(),
+        calories: mockResult.calories,
+        protein: mockResult.protein,
+        carbs: mockResult.carbs,
+        fat: mockResult.fat,
+        fullData: mockResult,
+        savedImage: null
+      };
+      const updated = [newHistoryItem, ...historyList].slice(0, 6);
+      setHistoryList(updated);
+      localStorage.setItem('givo_meal_history', JSON.stringify(updated));
+      
+      setView("result");
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
+
+  const loadFromHistory = (item) => {
+    setResult(item.fullData);
+    setImageSrc(item.savedImage);
+    setView("result");
+  };
+
+  const reset = () => {
+    setImageSrc(null);
+    setResult(null);
+    setView("landing");
+  };
+
+  return (
+    <div className={`min-height-screen font-sans transition-colors duration-300 ${darkMode ? "bg-slate-950 text-white" : "bg-slate-50 text-slate-900"}`}>
+      
+      {/* --- HEADER --- */}
+      <header className="max-w-6xl mx-auto flex justify-between items-center p-6">
+        <div className="flex items-center gap-2 cursor-pointer" onClick={reset}>
+          <div className="w-8 h-8 rounded-xl bg-teal-600 flex items-center justify-center text-white font-bold">G</div>
+          <span className="text-xl font-bold tracking-tight text-teal-600">Givo</span>
+        </div>
+        <button onClick={() => setDarkMode(!darkMode)} className={`p-2.5 rounded-xl border ${darkMode ? "bg-white/5 border-white/10" : "bg-white border-black/5 shadow-sm"}`}>
+          {darkMode ? "☀️" : "🌙"}
+        </button>
+      </header>
+
+      {/* --- MAIN CORE CONTROLLER --- */}
+      <main className="max-w-4xl mx-auto px-4 pb-24">
+        {view === "landing" && (
+          <>
+            <LandingView darkMode={darkMode} onScan={() => setView("scan")} />
+            
+            {/* ─── GOOGLE ADSENSE PLACEHOLDER 1 (Landing Top Banner) ─── */}
+            <div className={`w-full h-24 my-8 rounded-2xl flex items-center justify-center border border-dashed ${darkMode ? "bg-white/5 border-white/10 text-white/30" : "bg-slate-200/50 border-slate-300 text-slate-400"} text-xs font-mono`}>
+              [ Google AdSense Banner Advertisement Section ]
+            </div>
+
+            {/* --- RECENT SCAN HISTORY CONTAINER --- */}
+            <section className="mt-12">
