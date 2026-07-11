@@ -1,10 +1,12 @@
 "use client";
 
 import React, { useState, useRef, useEffect, useCallback } from "react";
+import Link from "next/link";
 import {
   Camera, Upload, ScanLine, Sun, Moon, RefreshCw, Loader2, ChevronRight,
   X, Image as ImageIcon, Sparkles, ShieldCheck, AlertTriangle, CheckCircle2,
-  XCircle, Info, Flame, Droplet, Heart, Dumbbell, Baby, Users, ArrowLeft, Check
+  XCircle, Info, Flame, Droplet, Heart, Dumbbell, Baby, Users, ArrowLeft, Check,
+  Clock, Inbox
 } from "lucide-react";
 
 /* ---------------------------------------------------------------------- */
@@ -163,6 +165,72 @@ function DietBadge({ label, ok }) {
   );
 }
 
+/* --------------------------- Local scan history -------------------------- */
+
+const HISTORY_KEY = "givo_scan_history";
+const MAX_HISTORY = 12;
+
+function loadHistory() {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = window.localStorage.getItem(HISTORY_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveToHistory(entry) {
+  try {
+    const current = loadHistory();
+    const updated = [entry, ...current].slice(0, MAX_HISTORY);
+    window.localStorage.setItem(HISTORY_KEY, JSON.stringify(updated));
+    return updated;
+  } catch {
+    return loadHistory();
+  }
+}
+
+function compressImage(dataUrl, maxWidth = 220, quality = 0.55) {
+  return new Promise((resolve) => {
+    try {
+      const img = new window.Image();
+      img.onload = () => {
+        const scale = Math.min(1, maxWidth / img.width);
+        const canvas = document.createElement("canvas");
+        canvas.width = Math.max(1, Math.round(img.width * scale));
+        canvas.height = Math.max(1, Math.round(img.height * scale));
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        resolve(canvas.toDataURL("image/jpeg", quality));
+      };
+      img.onerror = () => resolve(null);
+      img.src = dataUrl;
+    } catch {
+      resolve(null);
+    }
+  });
+}
+
+/* -------------------------------- Ad slot -------------------------------- */
+/* Placeholder ad slots. Once your Google AdSense account is approved, swap  */
+/* the placeholder <div> below for the real <ins class="adsbygoogle"> tag    */
+/* and load the AdSense script in app/layout.jsx.                           */
+
+function AdSlot({ darkMode, label = "Advertisement", minHeight = 100 }) {
+  const t = useTheme(darkMode);
+  return (
+    <div
+      className={`w-full rounded-2xl border border-dashed flex items-center justify-center text-xs tracking-wide uppercase ${t.sub} ${
+        darkMode ? "border-white/15 bg-white/[0.02]" : "border-black/10 bg-black/[0.015]"
+      }`}
+      style={{ minHeight }}
+    >
+      {label}
+    </div>
+  );
+}
+
 async function analyzeImage(dataUrl) {
   const res = await fetch("/api/analyze", {
     method: "POST",
@@ -186,6 +254,7 @@ export default function Page() {
   const [tipIndex, setTipIndex] = useState(0);
   const [error, setError] = useState(null);
   const [result, setResult] = useState(null);
+  const [history, setHistory] = useState([]);
 
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
@@ -231,6 +300,10 @@ export default function Page() {
     return () => clearInterval(id);
   }, [isAnalyzing]);
 
+  useEffect(() => {
+    setHistory(loadHistory());
+  }, []);
+
   const capturePhoto = () => {
     const video = videoRef.current;
     const canvas = canvasRef.current;
@@ -265,11 +338,30 @@ export default function Page() {
       const parsed = await analyzeImage(imageSrc);
       setResult(parsed);
       setView("result");
+      const thumbnail = await compressImage(imageSrc);
+      const entry = {
+        id: `${Date.now()}`,
+        name: parsed.name || "Scanned food",
+        date: new Date().toLocaleDateString("en-GB"),
+        calories: parsed.calories,
+        protein: parsed.protein,
+        carbs: parsed.carbs,
+        fat: parsed.fat,
+        thumbnail,
+        result: parsed,
+      };
+      setHistory(saveToHistory(entry));
     } catch (e) {
       setError(e.message || "Couldn't read that plate clearly. Try again with better lighting.");
     } finally {
       setIsAnalyzing(false);
     }
+  };
+
+  const openHistoryItem = (item) => {
+    setResult(item.result);
+    setImageSrc(item.thumbnail);
+    setView("result");
   };
 
   return (
@@ -289,7 +381,15 @@ export default function Page() {
       </header>
 
       <main className="max-w-5xl mx-auto px-5 sm:px-8 pb-16">
-        {view === "landing" && <LandingView darkMode={darkMode} t={t} onScan={() => setView("scan")} />}
+        {view === "landing" && (
+          <LandingView
+            darkMode={darkMode}
+            t={t}
+            onScan={() => setView("scan")}
+            history={history}
+            onOpenHistoryItem={openHistoryItem}
+          />
+        )}
 
         {view === "scan" && (
           <ScanView
@@ -308,11 +408,21 @@ export default function Page() {
           <ResultView darkMode={darkMode} t={t} result={result} imageSrc={imageSrc} onReset={reset} />
         )}
       </main>
+
+      <footer className={`max-w-5xl mx-auto px-5 sm:px-8 pb-10 text-center text-xs ${t.sub}`}>
+        <div className="flex flex-wrap justify-center gap-x-5 gap-y-2 mb-3">
+          <Link href="/about" className="hover:underline">About</Link>
+          <Link href="/privacy" className="hover:underline">Privacy Policy</Link>
+          <Link href="/terms" className="hover:underline">Terms of Service</Link>
+          <Link href="/contact" className="hover:underline">Contact</Link>
+        </div>
+        <div>&copy; {new Date().getFullYear()} Givo Food Scanner</div>
+      </footer>
     </div>
   );
 }
 
-function LandingView({ darkMode, t, onScan }) {
+function LandingView({ darkMode, t, onScan, history = [], onOpenHistoryItem }) {
   const features = [
     { icon: ScanLine, title: "Instant camera scan", body: "Point your camera at any meal and get a read in seconds." },
     { icon: Sparkles, title: "Full nutrition breakdown", body: "Calories, macros, vitamins and minerals, all in one card." },
@@ -342,6 +452,10 @@ function LandingView({ darkMode, t, onScan }) {
               <ChevronRight size={16} className="transition-transform group-hover:translate-x-0.5" />
             </button>
             <span className={`text-xs ${t.sub}`}>No account needed · Works on mobile</span>
+          </div>
+
+          <div className="mt-6">
+            <AdSlot darkMode={darkMode} label="Advertisement" minHeight={90} />
           </div>
 
           <div className="grid sm:grid-cols-3 gap-3 mt-10">
@@ -382,6 +496,56 @@ function LandingView({ darkMode, t, onScan }) {
           </div>
         </div>
       </div>
+
+      <RecentScans darkMode={darkMode} t={t} history={history} onOpen={onOpenHistoryItem} />
+    </div>
+  );
+}
+
+function RecentScans({ darkMode, t, history, onOpen }) {
+  return (
+    <div className="mt-14 fade-in">
+      <h2 className="font-display text-lg font-semibold mb-4">📋 Your Recent Scans (Saved Locally)</h2>
+
+      {history.length === 0 ? (
+        <GlassCard darkMode={darkMode} soft className="p-6 text-center">
+          <Inbox size={22} className={`mx-auto mb-2 ${t.sub}`} />
+          <p className={`text-sm ${t.sub}`}>
+            No recent food scans found. Your nutritional history will be saved automatically on this device for quick access. No account required.
+          </p>
+        </GlassCard>
+      ) : (
+        <div className="grid sm:grid-cols-2 gap-3">
+          {history.map((item) => (
+            <button
+              key={item.id}
+              onClick={() => onOpen(item)}
+              className="text-left"
+            >
+              <GlassCard darkMode={darkMode} soft className="p-4 flex gap-3 items-center hover:-translate-y-0.5 transition-transform">
+                {item.thumbnail ? (
+                  <img src={item.thumbnail} alt={item.name} className="w-16 h-16 rounded-xl object-cover shrink-0" />
+                ) : (
+                  <div className={`w-16 h-16 rounded-xl shrink-0 flex items-center justify-center ${darkMode ? "bg-white/5" : "bg-black/5"}`}>
+                    <ImageIcon size={18} className={t.sub} />
+                  </div>
+                )}
+                <div className="min-w-0 flex-1">
+                  <div className="font-medium text-sm truncate">{item.name}</div>
+                  <div className={`flex items-center gap-1 text-xs mt-0.5 ${t.sub}`}>
+                    <Clock size={11} /> {item.date} · {item.calories} kcal
+                  </div>
+                  <div className="flex gap-2 mt-1.5">
+                    <span className={`text-[11px] px-2 py-0.5 rounded-full ${t.chip}`}>P {item.protein}g</span>
+                    <span className={`text-[11px] px-2 py-0.5 rounded-full ${t.chip}`}>C {item.carbs}g</span>
+                    <span className={`text-[11px] px-2 py-0.5 rounded-full ${t.chip}`}>F {item.fat}g</span>
+                  </div>
+                </div>
+              </GlassCard>
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -573,6 +737,8 @@ function ResultView({ darkMode, t, result, imageSrc, onReset }) {
           </div>
         )}
       </GlassCard>
+
+      <AdSlot darkMode={darkMode} label="Advertisement" minHeight={100} />
 
       {r.ingredients?.length > 0 && (
         <GlassCard darkMode={darkMode} className="p-5 sm:p-6">
