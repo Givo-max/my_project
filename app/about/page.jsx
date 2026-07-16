@@ -12,7 +12,7 @@ export default function AboutPage() {
         <h1 className="font-display text-3xl font-semibold mt-4 mb-6">About Us</h1>
         <div className="bg-white/70 border border-white rounded-3xl p-6 sm:p-8 space-y-4 text-sm leading-relaxed text-slate-700">
           <p>
-            Welcome to Givo Food Scanner, an intelligent web-utility platform engineered to
+            Welcome to Givo Food Analyzer, an intelligent web-utility platform engineered to
             simplify daily macro tracking and automated dietary analysis.
           </p>
           <p>
