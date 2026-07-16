@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-export const metadata = { title: "About Us — Givo Food Scanner" };
+export const metadata = { title: "About Us — Givo Food Analyzer" };
 
 export default function AboutPage() {
   return (
