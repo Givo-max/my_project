@@ -1,7 +1,7 @@
 import "./globals.css";
 
 export const metadata = {
-  title: "Givo Food Scanner",
+  title: "Givo Food Analyzer",
   description: "Point, scan, and know exactly what's on your plate — instant AI nutrition analysis from a photo.",
   manifest: "/manifest.json",
   themeColor: "#1F9D6C",
@@ -20,3 +20,4 @@ export default function RootLayout({ children }) {
     </html>
   );
 }
+
