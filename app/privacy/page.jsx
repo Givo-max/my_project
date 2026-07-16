@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-export const metadata = { title: "Privacy Policy — Givo Food Scanner" };
+export const metadata = { title: "Privacy Policy — Givo Food Analyzer" };
 
 export default function PrivacyPage() {
   return (
@@ -12,7 +12,7 @@ export default function PrivacyPage() {
         <h1 className="font-display text-3xl font-semibold mt-4 mb-6">Privacy Policy</h1>
         <div className="bg-white/70 border border-white rounded-3xl p-6 sm:p-8 space-y-4 text-sm leading-relaxed text-slate-700">
           <p>
-            At Givo Food Scanner, we take your privacy seriously. Our food scanning tool
+            At Givo Food Analyzer, we take your privacy seriously. Our food scanning tool
             utilizes your device camera or image uploads to estimate nutritional facts locally
             or via secure AI API streams.
           </p>
