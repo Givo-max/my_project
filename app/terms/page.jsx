@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-export const metadata = { title: "Terms of Service — Givo Food Scanner" };
+export const metadata = { title: "Terms of Service — Givo Food Analyzer" };
 
 export default function TermsPage() {
   return (
@@ -12,7 +12,7 @@ export default function TermsPage() {
         <h1 className="font-display text-3xl font-semibold mt-4 mb-6">Terms of Service</h1>
         <div className="bg-white/70 border border-white rounded-3xl p-6 sm:p-8 space-y-4 text-sm leading-relaxed text-slate-700">
           <p>
-            By accessing and using Givo Food Scanner, you agree to comply with our standard
+            By accessing and using Givo Food Analyzer, you agree to comply with our standard
             terms of use.
           </p>
           <p>
@@ -21,7 +21,7 @@ export default function TermsPage() {
             fitness logging, and educational guidelines.
           </p>
           <p>
-            <strong>Liability Disclaimer:</strong> Givo Food Scanner is not responsible for any
+            <strong>Liability Disclaimer:</strong> Givo Food Analyzer is not responsible for any
             clinical dietary complications, macro calculation mismatches, or food allergies.
             Always cross-verify food analysis logs with clinical health supervisors or doctors.
           </p>
