@@ -6,11 +6,11 @@ import {
   Camera, Upload, ScanLine, Sun, Moon, RefreshCw, Loader2, ChevronRight,
   X, Image as ImageIcon, Sparkles, ShieldCheck, AlertTriangle, CheckCircle2,
   XCircle, Info, Flame, Droplet, Heart, Dumbbell, Baby, Users, ArrowLeft, Check,
-  Clock, Inbox
+  Clock, Inbox, Bot, Utensils, Repeat, AlertOctagon, Gauge
 } from "lucide-react";
 
 /* ---------------------------------------------------------------------- */
-/*  Givo Food Scanner — premium, glassmorphic AI food-scanning experience. */
+/*  Givo Food Analyzer — premium, glassmorphic AI food-analysis experience.*/
 /*  The AI call goes through /api/analyze, a server route that keeps the  */
 /*  Anthropic API key private (see app/api/analyze/route.js).             */
 /* ---------------------------------------------------------------------- */
@@ -42,6 +42,7 @@ function useTheme(darkMode) {
     bg: darkMode ? "bg-slate-950" : "bg-emerald-50",
     text: darkMode ? "text-emerald-50" : "text-slate-900",
     sub: darkMode ? "text-slate-400" : "text-slate-500",
+    accent: darkMode ? "text-blue-400" : "text-blue-600",
     card: darkMode ? "bg-white/5 border-white/10" : "bg-white/70 border-white/90",
     cardSoft: darkMode ? "bg-white/5 border-white/5" : "bg-white/50 border-white/70",
     chip: darkMode ? "bg-white/10 border-white/10 text-slate-200" : "bg-black/5 border-black/5 text-slate-700",
@@ -113,11 +114,13 @@ function HealthRing({ score, darkMode, size = 132 }) {
 
 function MacroBar({ label, value, unit, max, color, darkMode }) {
   const pct = Math.min(100, (value / max) * 100);
+  const isPercent = unit === "%";
+  const accent = darkMode ? "text-blue-400" : "text-blue-600";
   return (
     <div>
       <div className="flex items-baseline justify-between mb-1.5">
         <span className={`text-sm ${darkMode ? "text-slate-200" : "text-slate-700"}`}>{label}</span>
-        <span className="font-mono text-sm tabular-nums font-medium">{value}{unit}</span>
+        <span className={`font-mono text-sm tabular-nums font-medium ${isPercent ? accent : ""}`}>{value}{unit}</span>
       </div>
       <div className={`h-2 rounded-full overflow-hidden ${darkMode ? "bg-white/10" : "bg-black/5"}`}>
         <div className="h-full rounded-full transition-all duration-1000 ease-out" style={{ width: `${pct}%`, background: color }} />
@@ -132,6 +135,75 @@ function MicroStat({ label, value, darkMode }) {
     <div className={`rounded-2xl border p-3.5 ${t.chip}`}>
       <div className="text-xs uppercase tracking-wide opacity-70 mb-1">{label}</div>
       <div className="font-mono text-base font-semibold tabular-nums">{value}</div>
+    </div>
+  );
+}
+
+const SCORE_META = [
+  { key: "nutrition", label: "Nutrition" },
+  { key: "protein", label: "Protein" },
+  { key: "heart", label: "Heart" },
+  { key: "diabetes", label: "Diabetes" },
+  { key: "weightLoss", label: "Weight Loss" },
+  { key: "muscleGain", label: "Muscle Gain" },
+  { key: "gutHealth", label: "Gut Health" },
+];
+
+function ScoreCard({ label, value, reasons, darkMode }) {
+  const t = useTheme(darkMode);
+  const color = value >= 70 ? "#1F9D6C" : value >= 40 ? "#E8A33D" : "#E85D4F";
+  return (
+    <div className={`rounded-2xl border p-3.5 ${t.chip}`}>
+      <div className="flex items-baseline justify-between mb-1">
+        <span className="text-xs font-medium">{label}</span>
+        <span className="font-mono text-sm font-semibold tabular-nums" style={{ color }}>{value}%</span>
+      </div>
+      <div className={`h-1.5 rounded-full overflow-hidden mb-2 ${darkMode ? "bg-white/10" : "bg-black/5"}`}>
+        <div className="h-full rounded-full transition-all duration-700" style={{ width: `${value}%`, background: color }} />
+      </div>
+      {reasons?.length > 0 && (
+        <ul className={`text-[11px] space-y-0.5 ${t.sub}`}>
+          {reasons.slice(0, 3).map((r, i) => (
+            <li key={i}>• {r}</li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+function ConfidenceRow({ confidence, darkMode }) {
+  const t = useTheme(darkMode);
+  if (!confidence) return null;
+  const items = [
+    { label: "Food Detection", value: confidence.food },
+    { label: "Ingredients", value: confidence.ingredients },
+    { label: "Nutrition", value: confidence.nutrition },
+    { label: "Image Quality", value: confidence.imageQuality },
+  ].filter((i) => typeof i.value === "number");
+  if (items.length === 0) return null;
+  return (
+    <div className="flex flex-wrap gap-2">
+      {items.map((i, idx) => (
+        <span key={idx} className={`text-[11px] px-2.5 py-1 rounded-full border ${t.chip}`}>
+          {i.label} <span className={`font-mono font-semibold ${t.accent}`}>{i.value}%</span>
+        </span>
+      ))}
+    </div>
+  );
+}
+
+function IngredientCard({ item, darkMode }) {
+  const t = useTheme(darkMode);
+  return (
+    <div className={`rounded-2xl border p-3 flex items-center justify-between gap-2 ${t.chip}`}>
+      <div className="min-w-0">
+        <div className="text-sm font-medium truncate">{item.name}</div>
+        <div className={`text-xs ${t.sub}`}>{item.quantity}{item.unit}</div>
+      </div>
+      {typeof item.confidence === "number" && (
+        <span className={`text-xs font-mono font-semibold shrink-0 ${t.accent}`}>{item.confidence}%</span>
+      )}
     </div>
   );
 }
@@ -416,7 +488,7 @@ export default function Page() {
           <Link href="/terms" className="hover:underline">Terms of Service</Link>
           <Link href="/contact" className="hover:underline">Contact</Link>
         </div>
-        <div>&copy; {new Date().getFullYear()} Givo Food Scanner</div>
+        <div>&copy; {new Date().getFullYear()} Givo Food Analyzer</div>
       </footer>
     </div>
   );
@@ -660,8 +732,8 @@ function ScanView({
 
 function ResultView({ darkMode, t, result, imageSrc, onReset }) {
   const r = result;
-  const suggestions = r.suggestions || [];
   const hasAllergies = (r.allergies || []).length > 0;
+  const categoryLabel = r.category_label || r.categoryLabel || "Moderate";
 
   return (
     <div className="pt-6 sm:pt-10 max-w-3xl mx-auto fade-in space-y-5">
@@ -669,14 +741,19 @@ function ResultView({ darkMode, t, result, imageSrc, onReset }) {
         <ArrowLeft size={15} /> Scan another
       </button>
 
+      {/* Header */}
       <GlassCard darkMode={darkMode} className="p-5 sm:p-6">
         <div className="flex flex-col sm:flex-row gap-5 sm:items-center">
           {imageSrc && <img src={imageSrc} alt={r.name} className="w-full sm:w-28 h-40 sm:h-28 object-cover rounded-2xl" />}
           <div className="flex-1">
             <h2 className="font-display text-2xl font-semibold">{r.name}</h2>
-            <p className={`text-sm mt-0.5 ${t.sub}`}>Estimated serving · {r.serving}</p>
+            <p className={`text-sm mt-0.5 ${t.sub}`}>
+              {r.serving}{r.weightGrams ? ` · ~${r.weightGrams}g` : ""}
+              {r.category ? ` · ${r.category}` : ""}
+              {r.cuisine ? ` · ${r.cuisine} cuisine` : ""}
+            </p>
             <div className="flex flex-wrap gap-2 mt-3">
-              <CategoryBadge category={r.category} />
+              <CategoryBadge category={categoryLabel} />
               {r.diet && (
                 <>
                   <DietBadge label="Halal" ok={r.diet.halal} />
@@ -688,8 +765,44 @@ function ResultView({ darkMode, t, result, imageSrc, onReset }) {
           </div>
           <HealthRing score={r.healthScore ?? 0} darkMode={darkMode} />
         </div>
+        {r.confidence && (
+          <div className={`mt-4 pt-4 border-t ${t.divider}`}>
+            <ConfidenceRow confidence={r.confidence} darkMode={darkMode} />
+          </div>
+        )}
       </GlassCard>
 
+      {/* AI Coach */}
+      {r.aiCoach && (
+        <GlassCard darkMode={darkMode} soft className="p-5 sm:p-6">
+          <div className={`flex items-center gap-2 font-medium mb-2 ${t.accent}`}>
+            <Bot size={17} /> AI Coach
+          </div>
+          <p className={`text-sm leading-relaxed ${darkMode ? "text-slate-200" : "text-slate-700"}`}>{r.aiCoach}</p>
+        </GlassCard>
+      )}
+
+      {/* AI Health Scores */}
+      {r.scores && (
+        <GlassCard darkMode={darkMode} className="p-5 sm:p-6">
+          <div className={`flex items-center gap-2 font-medium mb-4 ${t.accent}`}>
+            <Gauge size={16} /> AI Health Scores
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            {SCORE_META.map(({ key, label }) => (
+              <ScoreCard
+                key={key}
+                label={label}
+                value={r.scores[key] ?? 0}
+                reasons={r.scoreReasons?.[key]}
+                darkMode={darkMode}
+              />
+            ))}
+          </div>
+        </GlassCard>
+      )}
+
+      {/* Macros */}
       <GlassCard darkMode={darkMode} className="p-5 sm:p-6">
         <div className="flex items-center gap-2 mb-4">
           <Flame size={16} className="text-amber-500" />
@@ -699,29 +812,50 @@ function ResultView({ darkMode, t, result, imageSrc, onReset }) {
         <div className="grid sm:grid-cols-2 gap-x-8 gap-y-4">
           <MacroBar label="Protein" value={r.protein} unit="g" max={60} color="#1F9D6C" darkMode={darkMode} />
           <MacroBar label="Carbohydrates" value={r.carbs} unit="g" max={100} color="#E8A33D" darkMode={darkMode} />
+          {typeof r.netCarbs === "number" && (
+            <MacroBar label="Net carbs" value={r.netCarbs} unit="g" max={100} color="#D9A441" darkMode={darkMode} />
+          )}
           <MacroBar label="Fat" value={r.fat} unit="g" max={50} color="#E85D4F" darkMode={darkMode} />
           <MacroBar label="Fiber" value={r.fiber} unit="g" max={20} color="#3A8FBD" darkMode={darkMode} />
           <MacroBar label="Sugar" value={r.sugar} unit="g" max={40} color="#C77DD0" darkMode={darkMode} />
+          {typeof r.addedSugar === "number" && (
+            <MacroBar label="Added sugar" value={r.addedSugar} unit="g" max={30} color="#C77DD0" darkMode={darkMode} />
+          )}
           <MacroBar label="Water content" value={r.water} unit="%" max={100} color="#4CB8C4" darkMode={darkMode} />
         </div>
+
+        {(typeof r.satFat === "number" || typeof r.omega3 === "number") && (
+          <div className={`mt-5 pt-4 border-t grid sm:grid-cols-2 gap-x-8 gap-y-4 ${t.divider}`}>
+            {typeof r.satFat === "number" && <MacroBar label="Saturated fat" value={r.satFat} unit="g" max={20} color="#E85D4F" darkMode={darkMode} />}
+            {typeof r.unsatFat === "number" && <MacroBar label="Unsaturated fat" value={r.unsatFat} unit="g" max={30} color="#1F9D6C" darkMode={darkMode} />}
+            {typeof r.transFat === "number" && <MacroBar label="Trans fat" value={r.transFat} unit="g" max={5} color="#B94A4A" darkMode={darkMode} />}
+            {typeof r.omega3 === "number" && <MacroBar label="Omega 3" value={r.omega3} unit="g" max={5} color="#3A8FBD" darkMode={darkMode} />}
+            {typeof r.omega6 === "number" && <MacroBar label="Omega 6" value={r.omega6} unit="g" max={10} color="#7A8FBD" darkMode={darkMode} />}
+          </div>
+        )}
       </GlassCard>
 
+      {/* Vitamins & minerals */}
       <GlassCard darkMode={darkMode} className="p-5 sm:p-6">
-        <div className="font-medium mb-4">Vitamins &amp; minerals</div>
+        <div className={`font-medium mb-4 ${t.accent}`}>Vitamins &amp; minerals</div>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           <MicroStat label="Sodium" value={`${r.sodium} mg`} darkMode={darkMode} />
           <MicroStat label="Potassium" value={`${r.potassium} mg`} darkMode={darkMode} />
           <MicroStat label="Calcium" value={`${r.calcium} mg`} darkMode={darkMode} />
           <MicroStat label="Iron" value={`${r.iron} mg`} darkMode={darkMode} />
           <MicroStat label="Magnesium" value={`${r.magnesium} mg`} darkMode={darkMode} />
+          {typeof r.zinc === "number" && <MicroStat label="Zinc" value={`${r.zinc} mg`} darkMode={darkMode} />}
           <MicroStat label="Cholesterol" value={`${r.cholesterol} mg`} darkMode={darkMode} />
           <MicroStat label="Vitamin A" value={r.vitaminA} darkMode={darkMode} />
+          {r.vitaminBComplex && <MicroStat label="Vitamin B Complex" value={r.vitaminBComplex} darkMode={darkMode} />}
+          <MicroStat label="Vitamin B12" value={r.vitaminB12} darkMode={darkMode} />
           <MicroStat label="Vitamin C" value={r.vitaminC} darkMode={darkMode} />
           <MicroStat label="Vitamin D" value={r.vitaminD} darkMode={darkMode} />
-          <MicroStat label="Vitamin B12" value={r.vitaminB12} darkMode={darkMode} />
+          {r.vitaminE && <MicroStat label="Vitamin E" value={r.vitaminE} darkMode={darkMode} />}
+          {r.vitaminK && <MicroStat label="Vitamin K" value={r.vitaminK} darkMode={darkMode} />}
         </div>
         {r.dailyIntake && (
-          <div className={`mt-5 pt-4 border-t ${darkMode ? "border-white/5" : "border-black/5"}`}>
+          <div className={`mt-5 pt-4 border-t ${t.divider}`}>
             <div className={`text-xs mb-3 ${t.sub}`}>% of daily reference intake (2000 kcal diet)</div>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
               {["calories", "protein", "carbs", "fat"].map((k) => (
@@ -730,7 +864,7 @@ function ResultView({ darkMode, t, result, imageSrc, onReset }) {
                   <div className={`h-1.5 rounded-full overflow-hidden ${darkMode ? "bg-white/10" : "bg-black/5"}`}>
                     <div className="h-full rounded-full bg-emerald-500" style={{ width: `${Math.min(100, r.dailyIntake[k])}%` }} />
                   </div>
-                  <div className="font-mono text-xs mt-1">{r.dailyIntake[k]}%</div>
+                  <div className={`font-mono text-xs mt-1 font-semibold ${t.accent}`}>{r.dailyIntake[k]}%</div>
                 </div>
               ))}
             </div>
@@ -740,17 +874,31 @@ function ResultView({ darkMode, t, result, imageSrc, onReset }) {
 
       <AdSlot darkMode={darkMode} label="Advertisement" minHeight={100} />
 
+      {/* Ingredient breakdown */}
       {r.ingredients?.length > 0 && (
         <GlassCard darkMode={darkMode} className="p-5 sm:p-6">
-          <div className="font-medium mb-3">Estimated ingredients</div>
-          <div className="flex flex-wrap gap-2">
+          <div className={`font-medium mb-3 ${t.accent}`}>Ingredient breakdown</div>
+          <div className="grid sm:grid-cols-2 gap-2.5">
             {r.ingredients.map((ing, i) => (
-              <span key={i} className={`text-xs px-3 py-1.5 rounded-full border ${t.chip}`}>{ing}</span>
+              <IngredientCard key={i} item={ing} darkMode={darkMode} />
             ))}
           </div>
         </GlassCard>
       )}
 
+      {/* AI explanation */}
+      {r.aiExplanation?.length > 0 && (
+        <GlassCard darkMode={darkMode} className="p-5 sm:p-6">
+          <div className={`font-medium mb-3 ${t.accent}`}>AI Explanation</div>
+          <ul className="space-y-2 text-sm">
+            {r.aiExplanation.map((s, i) => (
+              <li key={i} className="flex gap-2"><ChevronRight size={14} className={`mt-0.5 shrink-0 ${t.accent}`} />{s}</li>
+            ))}
+          </ul>
+        </GlassCard>
+      )}
+
+      {/* Benefits / Risks */}
       <div className="grid sm:grid-cols-2 gap-5">
         <GlassCard darkMode={darkMode} className="p-5 sm:p-6">
           <div className="flex items-center gap-2 font-medium mb-3">
@@ -774,6 +922,77 @@ function ResultView({ darkMode, t, result, imageSrc, onReset }) {
         </GlassCard>
       </div>
 
+      {/* Smart recommendations */}
+      {r.smartRecommendations?.length > 0 && (
+        <GlassCard darkMode={darkMode} className="p-5 sm:p-6">
+          <div className={`flex items-center gap-2 font-medium mb-3 ${t.accent}`}>
+            <Sparkles size={16} /> Smart Recommendations
+          </div>
+          <ul className="space-y-2 text-sm">
+            {r.smartRecommendations.map((s, i) => (
+              <li key={i} className="flex gap-2"><ChevronRight size={14} className={`mt-0.5 shrink-0 ${t.accent}`} />{s}</li>
+            ))}
+          </ul>
+        </GlassCard>
+      )}
+
+      {/* Smart warnings */}
+      {r.smartWarnings?.length > 0 && (
+        <GlassCard darkMode={darkMode} className="p-5 sm:p-6">
+          <div className="flex items-center gap-2 font-medium mb-3 text-amber-500">
+            <AlertOctagon size={16} /> Smart Warnings
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {r.smartWarnings.map((w, i) => (
+              <span key={i} className="text-xs px-3 py-1.5 rounded-full bg-amber-500/10 text-amber-600 border border-amber-500/25">{w}</span>
+            ))}
+          </div>
+        </GlassCard>
+      )}
+
+      {/* Cooking suggestions */}
+      {r.cookingSuggestions?.length > 0 && (
+        <GlassCard darkMode={darkMode} className="p-5 sm:p-6">
+          <div className="flex items-center gap-2 font-medium mb-3">
+            <Utensils size={16} className={t.accent} /> Cooking Suggestions
+          </div>
+          <ul className="space-y-2 text-sm">
+            {r.cookingSuggestions.map((s, i) => (
+              <li key={i} className="flex gap-2"><ChevronRight size={14} className="mt-0.5 text-slate-400 shrink-0" />{s}</li>
+            ))}
+          </ul>
+        </GlassCard>
+      )}
+
+      {/* Better alternatives */}
+      {r.betterAlternatives?.length > 0 && (
+        <GlassCard darkMode={darkMode} className="p-5 sm:p-6">
+          <div className="flex items-center gap-2 font-medium mb-3">
+            <Repeat size={16} className={t.accent} /> Better Alternatives
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {r.betterAlternatives.map((a, i) => (
+              <span key={i} className={`text-xs px-3 py-1.5 rounded-full border ${t.chip}`}>{a}</span>
+            ))}
+          </div>
+        </GlassCard>
+      )}
+
+      {/* Meal timing */}
+      {r.mealTiming?.length > 0 && (
+        <GlassCard darkMode={darkMode} className="p-5 sm:p-6">
+          <div className="flex items-center gap-2 font-medium mb-3">
+            <Clock size={16} className={t.accent} /> Best Meal Timing
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {r.mealTiming.map((m, i) => (
+              <span key={i} className={`text-xs px-3 py-1.5 rounded-full border ${t.chip}`}>{m}</span>
+            ))}
+          </div>
+        </GlassCard>
+      )}
+
+      {/* Suitability */}
       <GlassCard darkMode={darkMode} className="p-5 sm:p-6">
         <div className="font-medium mb-4">Is this right for you?</div>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
@@ -801,19 +1020,6 @@ function ResultView({ darkMode, t, result, imageSrc, onReset }) {
               <span key={i} className="text-xs px-3 py-1.5 rounded-full bg-rose-500/10 text-rose-600 border border-rose-500/25">{a}</span>
             ))}
           </div>
-        </GlassCard>
-      )}
-
-      {suggestions.length > 0 && (
-        <GlassCard darkMode={darkMode} className="p-5 sm:p-6">
-          <div className="flex items-center gap-2 font-medium mb-3">
-            <Sparkles size={16} className="text-amber-500" /> Givo suggests
-          </div>
-          <ul className="space-y-2 text-sm">
-            {suggestions.map((s, i) => (
-              <li key={i} className="flex gap-2"><ChevronRight size={14} className="mt-0.5 text-amber-500 shrink-0" />{s}</li>
-            ))}
-          </ul>
         </GlassCard>
       )}
 
