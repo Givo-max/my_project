@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Mail } from "lucide-react";
 
-export const metadata = { title: "Contact Us — Givo Food Scanner" };
+export const metadata = { title: "Contact Us — Givo Food Analyzer" };
 
 export default function ContactPage() {
   return (
@@ -14,13 +14,13 @@ export default function ContactPage() {
         <div className="bg-white/70 border border-white rounded-3xl p-6 sm:p-8 space-y-4 text-sm leading-relaxed text-slate-700">
           <p>
             Have questions, feature suggestions, or technical business inquiries regarding the
-            Givo Food Scanner AI framework?
+            Givo Food Analyzer AI framework?
           </p>
           <p>Feel free to reach out to our technical management desk directly via our support email:</p>
           <p className="flex items-center gap-2 font-medium text-emerald-700">
             <Mail size={16} />
-            <a href="mailto:info@givofoodscanner.com" className="hover:underline">
-              info@givofoodscanner.com
+            <a href="mailto:info@givofoodanalyzer.com" className="hover:underline">
+              info@givofoodanalyzer.com
             </a>
           </p>
           <p>We aim to respond to all technical and user queries within 48 business hours.</p>
