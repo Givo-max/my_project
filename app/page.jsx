@@ -6,7 +6,7 @@ import {
   Camera, Upload, ScanLine, Sun, Moon, RefreshCw, Loader2, ChevronRight,
   X, Image as ImageIcon, Sparkles, ShieldCheck, AlertTriangle, CheckCircle2,
   XCircle, Info, Flame, Droplet, Heart, Dumbbell, Baby, Users, ArrowLeft, Check,
-  Clock, Inbox, Bot, Utensils, Repeat, AlertOctagon, Gauge
+  Clock, Inbox, Bot, Utensils, Repeat, AlertOctagon, Gauge, User
 } from "lucide-react";
 
 /* ---------------------------------------------------------------------- */
@@ -447,9 +447,14 @@ export default function Page() {
           </span>
           Givo
         </button>
-        <button aria-label="Toggle dark mode" onClick={() => setDarkMode((d) => !d)} className={`w-10 h-10 rounded-full border flex items-center justify-center ${t.chip}`}>
-          {darkMode ? <Sun size={17} /> : <Moon size={17} />}
-        </button>
+        <div className="flex items-center gap-2">
+          <Link href="/account" aria-label="Account" className={`w-10 h-10 rounded-full border flex items-center justify-center ${t.chip}`}>
+            <User size={17} />
+          </Link>
+          <button aria-label="Toggle dark mode" onClick={() => setDarkMode((d) => !d)} className={`w-10 h-10 rounded-full border flex items-center justify-center ${t.chip}`}>
+            {darkMode ? <Sun size={17} /> : <Moon size={17} />}
+          </button>
+        </div>
       </header>
 
       <main className="max-w-5xl mx-auto px-5 sm:px-8 pb-16">
@@ -1029,4 +1034,3 @@ function ResultView({ darkMode, t, result, imageSrc, onReset }) {
     </div>
   );
 }
-
