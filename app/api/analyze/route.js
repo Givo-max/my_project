@@ -1,4 +1,6 @@
 import { NextResponse } from "next/server";
+import { createServerClient } from "@supabase/ssr";
+import { cookies } from "next/headers";
 
 export const runtime = "nodejs";
 export const maxDuration = 30;
@@ -108,10 +110,38 @@ export async function POST(request) {
     }
 
     const parsed = JSON.parse(cleaned.slice(firstBrace, lastBrace + 1));
+
+    // Save scan to database (best-effort, doesn't block the response)
+    try {
+      const cookieStore = await cookies();
+      const supabase = createServerClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+        {
+          cookies: {
+            getAll() {
+              return cookieStore.getAll();
+            },
+            setAll() {},
+          },
+        }
+      );
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      await supabase.from("scans").insert({
+        user_id: user?.id || null,
+        food_name: parsed.name || null,
+        result_data: parsed,
+      });
+    } catch (saveErr) {
+      console.error("Failed to save scan:", saveErr);
+    }
+
     return NextResponse.json(parsed);
   } catch (err) {
     console.error("Analyze route error:", err);
     return NextResponse.json({ error: "Something went wrong analyzing that photo." }, { status: 500 });
   }
 }
-
