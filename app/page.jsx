@@ -6,7 +6,7 @@ import {
   Camera, Upload, ScanLine, Sun, Moon, RefreshCw, Loader2, ChevronRight,
   X, Image as ImageIcon, Sparkles, ShieldCheck, AlertTriangle, CheckCircle2,
   XCircle, Info, Flame, Droplet, Heart, Dumbbell, Baby, Users, ArrowLeft, Check,
-  Clock, Inbox, Bot, Utensils, Repeat, AlertOctagon, Gauge, User
+  Clock, Inbox, Bot, Utensils, Repeat, AlertOctagon, Gauge, User, Pencil
 } from "lucide-react";
 
 /* ---------------------------------------------------------------------- */
@@ -285,11 +285,11 @@ function compressImage(dataUrl, maxWidth = 220, quality = 0.55) {
   });
 }
 
-async function analyzeImage(dataUrl) {
+async function analyzeImage(dataUrl, correction) {
   const res = await fetch("/api/analyze", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ image: dataUrl }),
+    body: JSON.stringify({ image: dataUrl, correction }),
   });
   const data = await res.json();
   if (!res.ok) throw new Error(data.error || "Analysis failed.");
@@ -309,6 +309,8 @@ export default function Page() {
   const [error, setError] = useState(null);
   const [result, setResult] = useState(null);
   const [history, setHistory] = useState([]);
+  const [correcting, setCorrecting] = useState(false);
+  const [correctionError, setCorrectionError] = useState(null);
 
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
@@ -418,6 +420,20 @@ export default function Page() {
     setView("result");
   };
 
+  const runCorrection = async (correctionText) => {
+    if (!imageSrc || !correctionText.trim()) return;
+    setCorrecting(true);
+    setCorrectionError(null);
+    try {
+      const parsed = await analyzeImage(imageSrc, correctionText.trim());
+      setResult(parsed);
+    } catch (e) {
+      setCorrectionError(e.message || "Couldn't apply that correction. Try again.");
+    } finally {
+      setCorrecting(false);
+    }
+  };
+
   return (
     <div className={`min-h-screen w-full transition-colors duration-300 ${t.bg} ${t.text}`}>
       <MeshBackground darkMode={darkMode} />
@@ -464,7 +480,16 @@ export default function Page() {
         )}
 
         {view === "result" && result && (
-          <ResultView darkMode={darkMode} t={t} result={result} imageSrc={imageSrc} onReset={reset} />
+          <ResultView
+            darkMode={darkMode}
+            t={t}
+            result={result}
+            imageSrc={imageSrc}
+            onReset={reset}
+            onCorrect={runCorrection}
+            correcting={correcting}
+            correctionError={correctionError}
+          />
         )}
       </main>
 
@@ -713,7 +738,65 @@ function ScanView({
   );
 }
 
-function ResultView({ darkMode, t, result, imageSrc, onReset }) {
+function CorrectionBox({ darkMode, t, onCorrect, correcting, correctionError }) {
+  const [open, setOpen] = useState(false);
+  const [text, setText] = useState("");
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (!text.trim() || correcting) return;
+    onCorrect(text);
+  };
+
+  if (!open) {
+    return (
+      <button
+        onClick={() => setOpen(true)}
+        className={`inline-flex items-center gap-1.5 text-xs font-medium ${t.accent} hover:underline`}
+      >
+        <Pencil size={12} /> Not quite right? Correct it
+      </button>
+    );
+  }
+
+  return (
+    <div className={`rounded-2xl border p-3.5 ${t.chip}`}>
+      <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-2">
+        <input
+          type="text"
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          placeholder="e.g. this is fried egg, not boiled"
+          autoFocus
+          className={`flex-1 text-sm px-3 py-2 rounded-xl border outline-none bg-transparent ${darkMode ? "border-white/15 placeholder:text-slate-500" : "border-black/10 placeholder:text-slate-400"}`}
+        />
+        <div className="flex gap-2">
+          <button
+            type="submit"
+            disabled={correcting || !text.trim()}
+            className="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 text-sm font-medium px-4 py-2 rounded-xl text-white disabled:opacity-50"
+            style={{ background: "linear-gradient(135deg, #1F9D6C, #15866B)" }}
+          >
+            {correcting ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />}
+            {correcting ? "Re-checking…" : "Apply"}
+          </button>
+          <button
+            type="button"
+            onClick={() => { setOpen(false); setText(""); }}
+            className={`text-sm font-medium px-3 py-2 rounded-xl border ${t.chip}`}
+          >
+            Cancel
+          </button>
+        </div>
+      </form>
+      {correctionError && (
+        <p className="text-xs text-rose-500 mt-2">{correctionError}</p>
+      )}
+    </div>
+  );
+}
+
+function ResultView({ darkMode, t, result, imageSrc, onReset, onCorrect, correcting, correctionError }) {
   const r = result;
   const hasAllergies = (r.allergies || []).length > 0;
   const categoryLabel = r.category_label || r.categoryLabel || "Moderate";
@@ -754,6 +837,10 @@ function ResultView({ darkMode, t, result, imageSrc, onReset }) {
           </div>
         )}
       </GlassCard>
+
+      {onCorrect && (
+        <CorrectionBox darkMode={darkMode} t={t} onCorrect={onCorrect} correcting={correcting} correctionError={correctionError} />
+      )}
 
       {/* AI Coach */}
       {r.aiCoach && (
