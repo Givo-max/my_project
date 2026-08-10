@@ -1,12 +1,17 @@
 import { NextResponse } from "next/server";
-import { createServerClient } from "@supabase/ssr";
-import { cookies } from "next/headers";
 
 export const runtime = "nodejs";
 export const maxDuration = 30;
 
 const SCHEMA_PROMPT = `You are a food recognition and nutrition-estimation engine for a consumer app called Givo Food Analyzer.
 Look at the photo and identify the single main food or dish shown. Then produce a realistic, professional-grade nutritional estimate as if referencing USDA FoodData Central and a registered dietitian's judgment.
+
+CRITICAL — look carefully before answering. Do NOT default to the most statistically common variant of a food. Base every identification strictly on visible evidence in the photo:
+- Eggs: examine shell/texture/shape/browning to tell boiled, fried, scrambled, poached, or omelette apart — do not assume "boiled" by default.
+- Meat: examine color, texture, cut, bone shape, and the dish's visual style (curry color, garnish, plating) to tell chicken, mutton, beef, or fish apart — do not assume "mutton" or any single default by default.
+- Rice/grain dishes: check color and visible mix-ins to tell plain rice, biryani, pulao, or fried rice apart.
+- If the photo genuinely does not give enough visual evidence to be sure, make your best realistic guess but LOWER "confidence.food" accordingly instead of guessing with false high confidence.
+
 Respond with ONLY raw JSON (no markdown fences, no commentary, no preamble) matching EXACTLY this shape and key names:
 {
 "name": string,
@@ -53,7 +58,7 @@ Rules:
 
 export async function POST(request) {
   try {
-    const { image } = await request.json();
+    const { image, correction } = await request.json();
     if (!image || typeof image !== "string" || !image.startsWith("data:")) {
       return NextResponse.json({ error: "No valid image provided." }, { status: 400 });
     }
@@ -68,6 +73,11 @@ export async function POST(request) {
 
     const mediaType = image.substring(image.indexOf(":") + 1, image.indexOf(";"));
     const base64 = image.substring(image.indexOf(",") + 1);
+
+    let promptText = SCHEMA_PROMPT;
+    if (correction && typeof correction === "string" && correction.trim()) {
+      promptText += `\n\nIMPORTANT — the user has reviewed your previous answer and given this correction, which you MUST follow exactly: "${correction.trim()}". Re-identify the food and recalculate every field (ingredients, nutrition, scores, everything) consistent with this correction.`;
+    }
 
     const response = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
@@ -84,7 +94,7 @@ export async function POST(request) {
             role: "user",
             content: [
               { type: "image", source: { type: "base64", media_type: mediaType, data: base64 } },
-              { type: "text", text: SCHEMA_PROMPT },
+              { type: "text", text: promptText },
             ],
           },
         ],
@@ -110,38 +120,10 @@ export async function POST(request) {
     }
 
     const parsed = JSON.parse(cleaned.slice(firstBrace, lastBrace + 1));
-
-    // Save scan to database (best-effort, doesn't block the response)
-    try {
-      const cookieStore = await cookies();
-      const supabase = createServerClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-        {
-          cookies: {
-            getAll() {
-              return cookieStore.getAll();
-            },
-            setAll() {},
-          },
-        }
-      );
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-
-      await supabase.from("scans").insert({
-        user_id: user?.id || null,
-        food_name: parsed.name || null,
-        result_data: parsed,
-      });
-    } catch (saveErr) {
-      console.error("Failed to save scan:", saveErr);
-    }
-
     return NextResponse.json(parsed);
   } catch (err) {
     console.error("Analyze route error:", err);
     return NextResponse.json({ error: "Something went wrong analyzing that photo." }, { status: 500 });
   }
 }
+
