@@ -441,7 +441,7 @@ export default function Page() {
       <header className="max-w-5xl mx-auto px-5 sm:px-8 pt-6 flex items-center justify-between">
         <button onClick={() => setView("landing")} className="flex items-center gap-2 font-display font-semibold text-lg tracking-tight">
           <img
-            src="/file_0000000032d0820d9c319c465d226ff3.png"
+            src="/logo.png"
             alt="Givo logo"
             className="w-8 h-8 rounded-xl object-contain"
           />
